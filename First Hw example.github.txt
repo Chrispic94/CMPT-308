@@ -1,6 +1,0 @@
--- Homework 1
--- Chris Piccirillo
-
--- 1 
-Select * 
-FROM customers;
