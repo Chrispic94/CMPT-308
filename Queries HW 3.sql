@@ -124,11 +124,11 @@ Group by products.city );
 
 
  SELECT customers.city , customers.name  
-from customers
+from customers 
 where city IN (
-	SELECT products.city 
+	SELECT products.city               --subquery 
 from products 
-group by products.city 
+group by products.city                     --required for execution
 having count(city) In                     --Queries the virtual table 
 (SELECT MAX(number) from citycount) )  --Selects the highest number from virtual table 
 
@@ -195,7 +195,30 @@ From recalcd, orders
 WHERE orders.ordno = recalcd.ordno;
 
 17) 
+ 
 
+UPDATE orders
+SET dollars = '100'
+WHERE ordno = '1011'
+;
+DROP VIEW IF EXISTS accu;--re drops the table created with a view if it is already created
+CREATE VIEW accu AS
+  (
+  SELECT o.ordno, (p.priceUSD * o.qty ) - ((p.priceUSD * o.qty )* (c.discount / 100)) as ACT --returns the actual value of the orders
+  FROM orders o, products p, customers c
+  WHERE o.cid = c.cid --joins orders to customers by cid
+  AND 
+  o.pid = p.pid--joins orders and products
+  group by o.ordno, ACT --requried to execute query
+  ORDER BY o.ordno asc -- changing the ordering to ascending
+  )
+;
+SELECT o.ordno, o.dollars, a.ACT
+FROM accu a, orders o --calls the table created above, accuracy as a
+WHERE o.ordno = a.ordno --makes sure that the order numbers of both values match
+AND
+a.ACT != o.dollars --compares the actual price with one listed
+;
 
 
 
