@@ -1,3 +1,13 @@
+-- Chris Piccirillo
+-- Database Management 
+-- Queries HW 3 (FINAL COMMIT)
+-- October 7, 2013
+
+
+
+
+
+
 -1) 
 
 
