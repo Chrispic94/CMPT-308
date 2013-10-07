@@ -111,7 +111,8 @@ FROM customers
 WHERE city in (
 		SELECT city --query to find the city in the virtual table
 		FROM citycount
-) 
+		
+)                limit 1
 
 
 11)  
@@ -134,7 +135,8 @@ having count(city) In                     --Queries the virtual table
 
 12) 
 
-SELECT p.name
+
+SELECT p.name, p.priceUSD
 FROM products p
 WHERE priceUSD >=  (SELECT AVG(priceUSD) --Finds where the price is greater than the average price in the procucts table.
                       FROM products )
@@ -190,11 +192,12 @@ ORDER BY orders.ordno asc
 
 );
 
-Select orders.dollars, recalcd.correct  --Selecting the info from the virtual table. 
+Select orders.ordno, orders.dollars, recalcd.correct  --Selecting the info from the virtual table. 
 From recalcd, orders
 WHERE orders.ordno = recalcd.ordno;
 
-17) 
+
+17)
  
 
 UPDATE orders
