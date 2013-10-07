@@ -1,117 +1,206 @@
-
---1.	Get	the	cities	of	agents	booking	an	order	for	--customer	c002.	Use	a	
---subquery.	(Yes,	this	is	the	same	question	as	--on	homework	#2)
+-1) 
 
 
-SELECT a.city
+SELECT a.city  
 FROM agents a
-WHERE aid IN  (SELECT aid
-               FROM orders
-               WHERE cid = 'c002' ) 
-               
-               
---2.     Get	the	cities	of	agents	booking	an	order	for	--customer	c002.	This	time	
---use	joins;	no	subqueries.
+WHERE aid IN  (SELECT aid 
+               FROM orders  -- Used a subquery to find the exact spot in the orders table where the cid = 'c002'.  Connected the tables by the foreign key aid.   
+               WHERE cid = 'c002' )  
+  
+ 
 
+-2)
 
-SELECT Distinct a.city
-FROM customers c, agents a inner join orders o ON a.aid = o.aid
+SELECT Distinct a.city   	
+FROM customers c, agents a inner join orders o ON a.aid = o.aid  -- Joined the orders table to agents table using the foreign key aid. 
 WHERE o.cid = 'c002'
 
+-3)  
 
---3.      Get	the	pids	of	products	ordered	through	any	agent	who	makes	at	least	
---one	order	for	a	customer	in	Kyoto.	Use	--subqueries.	(Yes,	this	is	also	the	
---same	question	as	on	homework	#2.)
-
-SELECT DISTINCT o.pid
-FROM orders o 
-WHERE aid in (SELECT a.aid
-              FROM agents a
-              WHERE EXISTS (SELECT c.city
-		           FROM customers c
+SELECT DISTINCT pid
+FROM orders  --Started from orders table
+WHERE aid in (SELECT Distinct aid  --Finding the agent aid to speicify the agent who made one order to Kyoto.	
+              FROM orders 
+              WHERE cid = (SELECT cid  --Used a subquery inside of another to pinpoint the city Kyoto in the customers table.  
+		           FROM customers 
 		           WHERE city ='Kyoto') )
 
---4 Get	the	pids	of	products	ordered	through	any	agent	who	makes	at	least	
---one	order	for	a	customer	in	Kyoto.	Use	joins	thus	time;	no	subqueries.
 
-SELECT o.pid
-FROM 
-orders o inner join agents a  on  a.aid = o.aid 
-agents a inner join  customers c on a.city = c.city
-WHERE c.city = 'Kyoto'
 
-SELECT Distinct o.pid
-FROM customers c, agents a inner join orders o ON a.aid = o.aid
-WHERE o.cid = 'c002'
 
---5 Get	the	names	of	customers	who	have	never	placed	an	order.	Use	a	
---subquery
+-4) 
+
+SELECT Distinct o2.pid
+FROM orders o1, orders o2, agents a, products p, customers c  
+WHERE c.cid = o1.cid and --joinging orders table to customers table
+      c.city = 'Kyoto' and -- Making sure the city name is Kyoto in the customer table.
+      o1.aid = o2.aid   --Joins the orders table to orders, as o1, o2
+      order by o2.pid
+      
+
+
+-5)  
 
 SELECT c.name
-FROM customers c
-WHERE cid NOT IN (SELECT cid
+FROM customers c  
+WHERE cid NOT IN (SELECT cid  --finds where the cid from customers is not in orders
               From orders o )
 
-       --6Get	the	names	of	customers	who	have	--never	placed	an	order.	Use	an	
---outer	join
-
+-6) 
 
 SELECT Distinct c.name
 FROM customers c
-LEFT JOIN  orders o
+FULL OUTER JOIN  orders o  --joining customers to orders and checking where the cid is non existant in orders, null
 ON c.cid=o.cid
 WHERE o.cid is NULL
 
---7 Get	the	names	of	customers	who	placed	at	--least	one	order	through	an	
---agent	in	their	city,	along	with	those	agent(s names
+-7) 
 
-SELECT Distinct c.name, a.name
-FROM customers c inner join agents a on c.city = a.city inner join orders o on o.aid = a.aid
-WHERE
+SELECT Distinct customers.name, agents.name   
+FROM customers, agents, orders
+WHERE customers.cid = orders.cid and --joining customers to orders by cid
+      customers.city = agents.city and --joining customers to agentss by city
+      agents.aid = orders.aid  --joining agents to orders by aid
 
---8.	Get	the	names	of	customers	and	agents	in	the	same	city,	along	with	the	
---name	of	the	city,	regardless	of	whether	or	not	the	customer	has	ever	
---placed	an	order	with	that	agent.
+8) 
 
 SELECT Distinct c.name, a.name, c.city
-FROM customers c inner join agents a on c.city = a.city inner join orders o on o.aid = a.aid
+FROM customers c inner join agents a on c.city = a.city inner join orders o on o.aid = a.aid  --using an inner join to just get the info that is the same in both tables
 
---9.	Get	the	name	and	city	of	customers	who	live	in	the	city	where	the	least	
---number	of	products	are	made.
 
-SELECT Distinct c.name, c.city
-FROM customers c
-WHERE cid in ( SELECT o.cid
-               FROM orders o
-               WHERE qty =
-                      (SELECT MIN (o.qty)
-                        FROM orders o
-               ) )
-              
+9)
 
---12 List	the	products	whose	priceUSD	is	above	the	average	priceUSD.
+
+
+DROP VIEW IF EXISTS citycount;
+CREATE VIEW citycount as ( 
+SELECT products.city,COUNT(city) Number --Creating a view, citycount to create a table with the number of cities in products.city
+From products 
+Group by products.city );
+
+
+ SELECT customers.city , customers.name  --Query to find city 
+from customers  
+where city IN ( 
+	SELECT products.city --subquery to find the city in products
+	from products 
+	group by products.city --
+	having count(city) In 
+		(SELECT MIN(number) from citycount) ) --querying the virtual table just created for the lowest number
+
+
+
+
+10) 
+
+
+
+DROP VIEW IF EXISTS citycount;  -- Creating the virutal table citycount 
+CREATE VIEW citycount as ( 
+SELECT products.city,COUNT(city) Number  --Getting the # of cities 
+From products 
+Group by products.city
+order by number desc  --ordering numbers in descending order
+limit 1 );  --limiting the possible results to 1 for "the city"
+
+
+
+
+SELECT customers.name, customers.city  
+FROM customers
+WHERE city in (
+		SELECT city --query to find the city in the virtual table
+		FROM citycount
+) 
+
+
+11)  
+
+DROP VIEW IF EXISTS citycount;  -- Creating the virtual table Citycount
+CREATE VIEW citycount as ( 
+SELECT products.city,COUNT(city) Number 
+From products 
+Group by products.city );
+
+
+ SELECT customers.city , customers.name  
+from customers
+where city IN (
+	SELECT products.city 
+from products 
+group by products.city 
+having count(city) In                     --Queries the virtual table 
+(SELECT MAX(number) from citycount) )  --Selects the highest number from virtual table 
+
+12) 
 
 SELECT p.name
 FROM products p
-WHERE priceUSD >=  (SELECT AVG(priceUSD) 
+WHERE priceUSD >=  (SELECT AVG(priceUSD) --Finds where the price is greater than the average price in the procucts table.
                       FROM products )
-                      
---13- Show	the	customer	name,	pid	ordered,	and	the	dollars	for	all	customer	
---orders,	sorted	by	dollars	from	high	to	low
+
+13) 
 
 
 SELECT c.name, o.pid, o.dollars
-FROM customers c, orders o
-ORDER By o.dollars desc
+FROM orders o 
+JOIN
+customers c ON c.cid = o.cid --joining orders to customers by cid
+ORDER By dollars desc  --ordering by dollars in descending order
 
---14 Show	all	customer	names	(in	order)	and	their	total	ordered,	and	
---nothing	more.	Use	coalesce	to	avoid	showing	NULLs
+
+14) 
 
 
---15.	Show	the	names	of	all	customers	who	bought	products	from	agents	
---based	in	New	York	along	with	the	names	of	the	products	they	ordered,	
---and	the	names	of	the	agents	who	sold	it	--to	them
+SELECT x.name, COALESCE ( Sum(x.dollars) , 0 ) as Total  --Finds all values that are null and puts 0 in their place
+From 
+(Select c.name, c.cid, o.dollars
+From customers c   
+full outer join  --full outer join to connect the necessary information from orders and customers 
+orders o ON
+c.cid = o.cid
+) as x 
 
-SELECT Distinct c.name
-FROM customers c, agents a
-WHERE a.city ='New York'
+Group by x.name, x.cid
+
+Order by x.name
+
+
+15)
+
+SELECT DISTINCT c.name,a.name,p.name
+FROM customers c, agents a, orders o, products p
+WHERE c.cid = o.cid and 
+o.aid = a.aid and --connecting the orders and agents table
+o.pid = p.pid and  --connecting the orders and products table 
+a.city = 'New York'  -- Making sure agents.city is equal to New York
+
+16)
+
+DROP VIEW IF EXISTS recalcd; 
+CREATE VIEW recalcd AS   --creating the virtual table recalcd. This table has the recalculated value of price in it. 
+(
+SELECT orders.ordno, (products.priceUSD * orders.qty ) - ((products.priceUSD * orders.qty )* (customers.discount / 100)) as Correct  -- Calculation of the correct price
+FROM Orders, Products, Customers, Agents
+WHERE 
+products.pid = orders.pid  and -- joinging products to orders
+customers.cid = orders.cid  --joining customers to orders
+Group by orders.ordno,correct  
+ORDER BY orders.ordno asc
+
+);
+
+Select orders.dollars, recalcd.correct  --Selecting the info from the virtual table. 
+From recalcd, orders
+WHERE orders.ordno = recalcd.ordno;
+
+17) 
+
+
+
+
+
+
+
+
+
